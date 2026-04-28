@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - Формула здоровья</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .cabinet-page { padding: 30px 0 60px; background: #fff; min-height: 100vh; }
+        
+        /* Выпадающая шторка профиля */
+        .profile-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 250px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            margin-top: 10px;
+        }
+        .profile-dropdown.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .dropdown-item-custom {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #46211A;
+            text-decoration: none;
+            transition: 0.2s;
+            cursor: pointer;
+            border-bottom: 1px solid #e8ddd7;
+        }
+        .dropdown-item-custom:last-child { border-bottom: none; }
+        .dropdown-item-custom:hover { background: #f5f0ed; color: #64b61a; }
+        
+        .profile-btn-wrapper { position: relative; }
+        .profile-trigger { background: rgba(255,255,255,0.15); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; cursor: pointer; transition: 0.2s; }
+        .profile-trigger:hover { background: #e8be52; color: #46211A; }
+        
+        .action-icons-header { display: flex; gap: 12px; align-items: center; }
+        .action-icon-header { background: rgba(255,255,255,0.15); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; cursor: pointer; position: relative; transition: 0.2s; }
+        .action-icon-header:hover { background: #e8be52; color: #46211A; }
+        .badge-header { position: absolute; top: -5px; right: -5px; background: #e8be52; color: #46211A; font-size: 10px; border-radius: 50%; padding: 2px 6px; min-width: 18px; }
+        
+        /* Табы */
+        .cabinet-tabs { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #e8ddd7; flex-wrap: wrap; }
+        .cabinet-tab { padding: 12px 24px; background: none; border: none; font-size: 16px; font-weight: 600; color: #693D3D; cursor: pointer; transition: 0.2s; position: relative; }
+        .cabinet-tab.active { color: #64b61a; }
+        .cabinet-tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: #64b61a; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        
+        /* Корзина */
+        .cart-item { display: flex; align-items: center; gap: 15px; padding: 15px; border-bottom: 1px solid #e8ddd7; }
+        .cart-item.selected { background: #e8f5e9; }
+        .cart-item-checkbox { width: 20px; height: 20px; cursor: pointer; }
+        .cart-item-img { width: 60px; height: 60px; background: #f9f6f3; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .cart-item-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .cart-item-info { flex: 1; }
+        .cart-item-info h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .cart-item-info p { font-size: 14px; color: #64b61a; font-weight: 600; }
+        .cart-item-quantity { display: flex; align-items: center; gap: 10px; }
+        .quantity-btn { width: 28px; height: 28px; background: #f5f0ed; border: none; border-radius: 50%; cursor: pointer; font-weight: bold; }
+        .cart-summary { margin-top: 20px; padding: 20px; background: #f9f6f3; border-radius: 16px; }
+        .checkout-btn { width: 100%; background: #64b61a; color: white; border: none; padding: 14px; border-radius: 50px; font-weight: 600; margin-top: 15px; cursor: pointer; }
+        
+        /* Избранное */
+        .favorites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .fav-item { background: #f9f6f3; border-radius: 16px; padding: 15px; text-align: center; position: relative; }
+        .fav-item img { max-width: 100%; height: 100px; object-fit: contain; }
+        .fav-remove { position: absolute; top: 10px; right: 10px; background: none; border: none; color: #ff4444; cursor: pointer; }
+        .btn-cart-small { background: #64b61a; color: white; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; margin-top: 10px; }
+        
+        /* Каталог */
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+        .product-card { background: #fff; border-radius: 20px; overflow: hidden; border: 1px solid #e8ddd7; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: all 0.3s ease; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); border-color: #64b61a; }
+        .product-image { height: 180px; background: #f9f6f3; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .product-image img { max-width: 100%; max-height: 140px; object-fit: contain; }
+        .product-info { padding: 16px; }
+        .product-info h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; color: #46211A; }
+        .product-price { font-size: 20px; font-weight: 800; color: #64b61a; margin-bottom: 12px; }
+        .product-actions { display: flex; gap: 8px; }
+        .btn-fav, .btn-cart { flex: 1; padding: 8px 0; font-size: 12px; border-radius: 30px; text-align: center; cursor: pointer; transition: 0.3s; border: none; font-family: inherit; }
+        .btn-fav { background: none; border: 1px solid #d4c4bc; }
+        .btn-fav.active { color: #A43820; border-color: #A43820; }
+        .btn-cart { background: #64b61a; color: white; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) { .profile-dropdown { width: 220px; right: -10px; } }
+    </style>
+</head>
+<body>
+
+<script>
+    // ========== ПРОВЕРКА АВТОРИЗАЦИИ ==========
+    let currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+    if (!currentUser) {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+        }
+    }
+    if (!currentUser) window.location.href = 'login.html';
+</script>
+
+<!-- ШАПКА -->
+<div class="header-top-white">
+    <div class="container">
+        <div class="header-top-row">
+            <div class="logo-col"><a href="cabinet.html" class="logo-link"><img src="logo.png" class="logo-img"><span class="logo-text-gradient">Формула здоровья</span></a></div>
+            <div class="auth-col"></div>
+        </div>
+    </div>
+</div>
+
+<div class="header-bottom-green">
+    <div class="container">
+        <div class="header-bottom-row">
+            <nav class="nav-menu">
+                <a href="cabinet.html?tab=catalog" class="nav-link-green">Каталог</a>
+                <a href="payment-delivery.html" class="nav-link-green">Оплата и доставка</a>
+                <a href="presentations.html" class="nav-link-green">Презентации</a>
+            </nav>
+            <div class="action-icons-header">
+                <a href="cabinet.html?tab=favorites" class="action-icon-header"><i class="far fa-heart"></i><span class="badge-header" id="favoritesCountHeader">0</span></a>
+                <a href="cabinet.html?tab=cart" class="action-icon-header"><i class="fas fa-shopping-cart"></i><span class="badge-header" id="cartCountHeader">0</span></a>
+                <div class="profile-btn-wrapper">
+                    <button class="profile-trigger" id="profileTrigger"><i class="far fa-user"></i></button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="profile.html" class="dropdown-item-custom"><i class="fas fa-user-circle"></i> Мой профиль</a>
+                        <a href="change-password.html" class="dropdown-item-custom"><i class="fas fa-key"></i> Сменить пароль</a>
+                        <a href="login.html" class="dropdown-item-custom" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Выйти</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="header-spacer"></div>
+
+<main class="cabinet-page">
+    <div class="container">
+        <div class="cabinet-tabs">
+            <button class="cabinet-tab active" data-tab="catalog">Каталог</button>
+            <button class="cabinet-tab" data-tab="cart">Корзина</button>
+            <button class="cabinet-tab" data-tab="favorites">Избранное</button>
+        </div>
+        
+        <div id="catalogTab" class="tab-content active">
+            <div class="products-grid" id="cabinetProductsGrid"></div>
+        </div>
+        
+        <div id="cartTab" class="tab-content">
+            <div class="cart-items" id="cartItemsList"></div>
+            <div class="cart-summary">
+                <div class="row"><div class="col-6"><strong>Выбрано товаров:</strong></div><div class="col-6 text-end" id="selectedCount">0</div></div>
+                <div class="row mt-2"><div class="col-6"><strong>Итого:</strong></div><div class="col-6 text-end" id="selectedTotal">0 ₽</div></div>
+                <button class="checkout-btn" id="checkoutBtn">Перейти к оформлению →</button>
+            </div>
+        </div>
+        
+        <div id="favoritesTab" class="tab-content">
+            <div class="favorites-grid" id="favoritesGrid"></div>
+        </div>
+    </div>
+</main>
+
+<!-- ПОДВАЛ -->
+<footer class="footer-new">
+    <div class="footer-bg"></div>
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand"><div class="footer-logo-wrapper"><img src="logo.png" class="footer-logo-img-new"><span class="footer-brand-name">Формула здоровья</span></div>
+            <div class="footer-social"><a href="https://t.me/formula_health07" class="footer-social-icon"><i class="fab fa-telegram"></i></a>
+            <a href="https://chat.whatsapp.com/JUMvATnb4BB221ohTk8vKt" class="footer-social-icon"><i class="fab fa-whatsapp"></i></a>
+            <a href="https://www.instagram.com/formula_health" class="footer-social-icon"><i class="fab fa-instagram"></i></a>
+            <a href="https://rutube.ru/video/741d2f5cacf5f7442516a02d371053a7/" class="footer-social-icon"><i class="fas fa-play-circle"></i></a></div></div>
+            <div class="footer-column"><h4 class="footer-title">Каталог</h4><ul><li><a href="cabinet.html?tab=catalog">Все продукты</a></li><li><a href="cabinet.html?tab=favorites">Избранное</a></li><li><a href="cabinet.html?tab=cart">Корзина</a></li></ul></div>
+            <div class="footer-column"><h4 class="footer-title">Информация</h4><ul><li><a href="payment-delivery.html">Оплата и доставка</a></li><li><a href="presentations.html">Презентации</a></li><li><a href="privacy.html">Политика конфиденциальности</a></li><li><a href="map.html">Данные</a></li></ul></div>
+            <div class="footer-column"><h4 class="footer-title">Личный кабинет</h4><ul><li><a href="profile.html">Профиль</a></li><li><a href="change-password.html">Сменить пароль</a></li></ul></div>
+        </div>
+        <div class="footer-bottom"><div class="footer-copyright"><p>© 2026 | Все права защищены</p></div></div>
+    </div>
+</footer>
+
+<script>
+    // ========== ПОЛНЫЙ СПИСОК ТОВАРОВ ==========
+    const allProducts = [
+        { id: "effector", name: "EFFECTOR", price: 3910, image: "images/effector.png", category: "Здоровье", desc: "биомодулятор для омоложения клеток" },
+        { id: "defender", name: "DEFENDER", price: 1790, image: "images/defender.png", category: "Здоровье", desc: "anti-stress complex" },
+        { id: "chlorophyll", name: "VERUM Chlorophyll Ferrum", price: 2750, image: "images/chlorophyll.png", category: "Здоровье", desc: "Biogenic element" },
+        { id: "synbiotic", name: "SYNBIOTIC 5", price: 1950, image: "images/synbiotic.png", category: "Здоровье", desc: "синбиотик 5-го поколения" },
+        { id: "diwata", name: "DIWATA", price: 2990, image: "images/diwata.png", category: "Здоровье", desc: "антипаразитарная программа" },
+        { id: "takaralife", name: "VERUM TAKARALIFE", price: 3950, image: "images/takaralife.png", category: "Здоровье", desc: "Health Benefit" },
+        { id: "brain", name: "VERUM HEALTHY BRAIN", price: 3250, image: "images/brain.png", category: "Здоровье", desc: "ноотропная формула" },
+        { id: "detox", name: "VERUM DETOX", price: 2950, image: "images/detox.png", category: "Здоровье", desc: "инновационный детокс-комплекс" },
+        { id: "nephro", name: "VERUM HEALTHY NEPHRO", price: 2550, image: "images/nephro.png", category: "Здоровье", desc: "комплексная защита почек" },
+        { id: "liver", name: "VERUM HEALTHY LIVER", price: 1900, image: "images/liver.png", category: "Здоровье", desc: "здоровье печени" },
+        { id: "fiber", name: "VERUM HEALTHY FIBER", price: 3450, image: "images/fiber.png", category: "Здоровье", desc: "уникальная формула клетчатки" },
+        { id: "kyanos", name: "VERUM KÝANOS", price: 1850, image: "images/kyanos.png", category: "Здоровье", desc: "Капли для глаз" },
+        { id: "youth", name: "VERUM YOUTH", price: 2400, image: "images/youth.png", category: "Здоровье", desc: "Белково-энзимный смузи" },
+        { id: "Day Cream", name: "Jenel Day Cream", price: 2350, image: "images/Day Cream.png", category: "Красота", desc: "Крем дневной" },
+        { id: "O2 tonic", name: "Jenel O2 tonic", price: 1100, image: "images/O2 tonic.png", category: "Красота", desc: "Кислородный тоник" },
+        { id: "fundesee", name: "FUNDESEE", price: 12500, image: "images/fundesee.png", category: "Красота", desc: "Омолаживающая маска" },
+        { id: "aloe", name: "Гель алоэ вера", price: 1900, image: "images/алоэ вера.png", category: "Красота", desc: "увлажняющее средство" },
+        { id: "cleanser", name: "Jenel Soft Foam Cleanser", price: 2290, image: "images/сleanser.png", category: "Красота", desc: "пенка для умывания" },
+        { id: "essence", name: "Золотая эссенция", price: 3800, image: "images/эссенция.png", category: "Красота", desc: "антивозрастной уход" },
+        { id: "nano-silver", name: "NANO SILVER", price: 1750, image: "images/nano silver.png", category: "Красота", desc: "коллоидное наносеребро" },
+        { id: "scarf", name: "Энергетический шарф", price: 13450, image: "images/Энергетический шарф.png", category: "Приборы", desc: "комплекс для здоровой спины" },
+        { id: "belt", name: "Турмалиновый магнитный пояс", price: 19900, image: "images/Турмалиновый магнитный пояс.png", category: "Приборы", desc: "магнитный пояс" },
+        { id: "massager", name: "Массажёр Magic Foherb", price: 65000, image: "images/Массажёр Magic Foherb.png", category: "Приборы", desc: "биоэнергетический прибор" },
+        { id: "ventun", name: "Прибор Вэнтун", price: 200000, image: "images/Прибор Вэнтун.png", category: "Приборы", desc: "физиотерапевтический комплекс" },
+        { id: "insoles", name: "HEALTH PRIORITY Стельки", price: 11500, image: "images/стельки.png", category: "Приборы", desc: "ортопедические изделия" },
+        { id: "glasses", name: "Компьютерные очки", price: 5500, image: "images/компьютерные очки.png", category: "Приборы", desc: "высокотехнологичные очки" },
+        { id: "resonator", name: "Квантовый резонатор для воды", price: 31100, image: "images/резонатор.png", category: "Приборы", desc: "резонатор воды" },
+        { id: "rod", name: "Водородный стержень", price: 5000, image: "images/стержень.png", category: "Приборы", desc: "водородный стержень" },
+        { id: "sauna", name: "Мини сауна БА-ГУА", price: 68000, image: "images/сауна.png", category: "Приборы", desc: "портативная сауна" },
+        { id: "cleaner", name: "Очиститель воздуха", price: 30600, image: "images/очиститель.png", category: "Приборы", desc: "очиститель воздуха Whieda" },
+        { id: "activator", name: "Активатор клеток", price: 50000, image: "images/активатор.png", category: "Приборы", desc: "физиотерапевтический прибор" }
+    ];
+
+    let cart = JSON.parse(localStorage.getItem(`cart_${currentUser?.email}`) || '[]');
+    let favorites = JSON.parse(localStorage.getItem(`fav_${currentUser?.email}`) || '[]');
+    
+    function updateCounters() {
+        document.getElementById('cartCountHeader').innerText = cart.length;
+        document.getElementById('favoritesCountHeader').innerText = favorites.length;
+    }
+    
+    // Выпадающее меню профиля
+    const profileTrigger = document.getElementById('profileTrigger');
+    const profileDropdown = document.getElementById('profileDropdown');
+    profileTrigger?.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('open'); });
+    document.addEventListener('click', (e) => { if (!profileTrigger?.contains(e.target) && !profileDropdown?.contains(e.target)) profileDropdown?.classList.remove('open'); });
+    
+    document.getElementById('logoutLink')?.addEventListener('click', (e) => { e.preventDefault(); sessionStorage.removeItem('currentUser'); localStorage.removeItem('currentUser'); window.location.href = 'login.html'; });
+    
+    // Каталог
+    function renderCatalog() {
+        const grid = document.getElementById('cabinetProductsGrid');
+        if (!grid) return;
+        grid.innerHTML = allProducts.map(p => {
+            const isInCart = cart.some(c => c.id === p.id);
+            const isInFav = favorites.some(f => f.id === p.id);
+            return `<div class="product-card"><div class="product-image"><img src="${p.image}" alt="${p.name}" onerror="this.parentElement.innerHTML='📦'"></div><div class="product-info"><h3>${p.name}</h3><div class="product-desc" style="font-size:12px; color:#693D3D;">${p.desc}</div><div class="product-price">${p.price.toLocaleString()} ₽</div><div class="product-actions"><button class="btn-fav ${isInFav ? 'active' : ''}" data-id="${p.id}"><i class="fa-${isInFav ? 'solid' : 'regular'} fa-heart"></i> Избранное</button><button class="btn-cart" data-id="${p.id}" ${isInCart ? 'disabled style="opacity:0.5;"' : ''}><i class="fas fa-shopping-cart"></i> ${isInCart ? 'В корзине' : 'В корзину'}</button></div></div></div>`;
+        }).join('');
+        
+        document.querySelectorAll('.btn-fav').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const product = allProducts.find(p => p.id === btn.dataset.id);
+                if (!product) return;
+                const exists = favorites.some(f => f.id === product.id);
+                if (exists) favorites = favorites.filter(f => f.id !== product.id);
+                else favorites.push(product);
+                localStorage.setItem(`fav_${currentUser?.email}`, JSON.stringify(favorites));
+                renderCatalog(); renderFavorites(); updateCounters();
+            });
+        });
+        
+        document.querySelectorAll('.btn-cart').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.disabled) return;
+                const product = allProducts.find(p => p.id === btn.dataset.id);
+                if (product) {
+                    const existing = cart.find(c => c.id === product.id);
+                    if (existing) existing.quantity = (existing.quantity || 1) + 1;
+                    else cart.push({ ...product, quantity: 1, selected: true });
+                    localStorage.setItem(`cart_${currentUser?.email}`, JSON.stringify(cart));
+                    renderCatalog(); renderCart(); updateCounters();
+                    alert(`Товар "${product.name}" добавлен в корзину`);
+                }
+            });
+        });
+    }
+    
+    // Корзина
+    function renderCart() {
+        const container = document.getElementById('cartItemsList');
+        if (!container) return;
+        if (!cart.length) { container.innerHTML = '<p style="text-align:center; padding:40px;">Корзина пуста</p>'; updateCartSummary(); return; }
+        container.innerHTML = cart.map((item, idx) => `<div class="cart-item ${item.selected ? 'selected' : ''}"><input type="checkbox" class="cart-item-checkbox" data-idx="${idx}" ${item.selected ? 'checked' : ''}><div class="cart-item-img"><img src="${item.image}" alt="${item.name}" onerror="this.parentElement.innerHTML='📦'"></div><div class="cart-item-info"><h4>${item.name}</h4><p>${item.price.toLocaleString()} ₽</p></div><div class="cart-item-quantity"><button class="quantity-btn" data-idx="${idx}" data-dir="minus">-</button><span>${item.quantity || 1}</span><button class="quantity-btn" data-idx="${idx}" data-dir="plus">+</button></div></div>`).join('');
+        
+        document.querySelectorAll('.cart-item-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => { const idx = parseInt(cb.dataset.idx); cart[idx].selected = cb.checked; localStorage.setItem(`cart_${currentUser?.email}`, JSON.stringify(cart)); updateCartSummary(); });
+        });
+        document.querySelectorAll('.quantity-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.dataset.idx);
+                if (btn.dataset.dir === 'plus') cart[idx].quantity = (cart[idx].quantity || 1) + 1;
+                else if (cart[idx].quantity > 1) cart[idx].quantity--;
+                else cart.splice(idx, 1);
+                localStorage.setItem(`cart_${currentUser?.email}`, JSON.stringify(cart));
+                renderCart(); renderCatalog(); updateCounters();
+            });
+        });
+        updateCartSummary();
+    }
+    
+    function updateCartSummary() {
+        const selected = cart.filter(item => item.selected);
+        const count = selected.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        const total = selected.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+        document.getElementById('selectedCount').innerText = count;
+        document.getElementById('selectedTotal').innerText = total.toLocaleString() + ' ₽';
+    }
+    
+    // Избранное
+    function renderFavorites() {
+        const grid = document.getElementById('favoritesGrid');
+        if (!grid) return;
+        if (!favorites.length) { grid.innerHTML = '<p style="text-align:center; padding:40px;">Избранное пусто</p>'; return; }
+        grid.innerHTML = favorites.map(product => `<div class="fav-item"><button class="fav-remove" data-id="${product.id}"><i class="fas fa-times"></i></button><img src="${product.image}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/100'"><h4>${product.name}</h4><p>${product.price.toLocaleString()} ₽</p><button class="btn-cart-small" data-id="${product.id}">В корзину</button></div>`).join('');
+        
+        document.querySelectorAll('.fav-remove').forEach(btn => {
+            btn.addEventListener('click', () => { favorites = favorites.filter(f => f.id !== btn.dataset.id); localStorage.setItem(`fav_${currentUser?.email}`, JSON.stringify(favorites)); renderFavorites(); renderCatalog(); updateCounters(); });
+        });
+        document.querySelectorAll('.btn-cart-small').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const product = favorites.find(f => f.id === btn.dataset.id);
+                if (product) {
+                    const existing = cart.find(c => c.id === product.id);
+                    if (existing) existing.quantity = (existing.quantity || 1) + 1;
+                    else cart.push({ ...product, quantity: 1, selected: true });
+                    localStorage.setItem(`cart_${currentUser?.email}`, JSON.stringify(cart));
+                    renderCart(); renderCatalog(); updateCounters();
+                    alert(`Товар "${product.name}" добавлен в корзину`);
+                }
+            });
+        });
+    }
+    
+    // Переключение табов
+    document.querySelectorAll('.cabinet-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.cabinet-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+        });
+    });
+    
+    document.getElementById('cartBtn')?.addEventListener('click', () => document.querySelector('.cabinet-tab[data-tab="cart"]').click());
+    document.getElementById('favoritesBtn')?.addEventListener('click', () => document.querySelector('.cabinet-tab[data-tab="favorites"]').click());
+    
+    document.getElementById('checkoutBtn')?.addEventListener('click', () => {
+        const selectedItems = cart.filter(item => item.selected);
+        if (selectedItems.length === 0) { alert('Выберите товары для оформления заказа'); return; }
+        sessionStorage.setItem('checkoutItems', JSON.stringify(selectedItems));
+        window.location.href = 'checkout.html';
+    });
+    
+    // Инициализация
+    renderCatalog();
+    renderCart();
+    renderFavorites();
+    updateCounters();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab === 'catalog') document.querySelector('.cabinet-tab[data-tab="catalog"]')?.click();
+    if (tab === 'cart') document.querySelector('.cabinet-tab[data-tab="cart"]')?.click();
+    if (tab === 'favorites') document.querySelector('.cabinet-tab[data-tab="favorites"]')?.click();
+</script>
+</body>
+</html>

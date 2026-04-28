@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой профиль - Формула здоровья</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .profile-page { padding: 30px 0 60px; background: #fff; min-height: 100vh; }
+        .profile-container { max-width: 600px; margin: 0 auto; }
+        .profile-avatar-container { text-align: center; margin-bottom: 30px; position: relative; }
+        .profile-avatar-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #64b61a; cursor: pointer; }
+        .profile-avatar-upload { position: absolute; bottom: 5px; right: calc(50% - 60px); background: #64b61a; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: white; }
+        .profile-avatar-upload input { display: none; }
+        .profile-field { margin-bottom: 20px; }
+        .profile-field label { display: block; font-weight: 600; margin-bottom: 8px; color: #46211A; }
+        .profile-field input, .profile-field textarea { width: 100%; padding: 12px; border: 1px solid #e8ddd7; border-radius: 12px; font-family: inherit; }
+        .save-profile-btn { background: #64b61a; color: white; border: none; padding: 12px 30px; border-radius: 50px; cursor: pointer; width: 100%; font-weight: 600; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #64b61a; text-decoration: none; }
+        
+        /* Выпадающая шторка профиля */
+        .profile-dropdown { position: absolute; top: 100%; right: 0; width: 250px; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; z-index: 1000; margin-top: 10px; }
+        .profile-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
+        .dropdown-item-custom { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: #46211A; text-decoration: none; transition: 0.2s; cursor: pointer; border-bottom: 1px solid #e8ddd7; }
+        .dropdown-item-custom:last-child { border-bottom: none; }
+        .dropdown-item-custom:hover { background: #f5f0ed; color: #64b61a; }
+        .profile-btn-wrapper { position: relative; }
+        .profile-trigger { background: rgba(255,255,255,0.15); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; cursor: pointer; transition: 0.2s; }
+        .profile-trigger:hover { background: #e8be52; color: #46211A; }
+        .action-icons-header { display: flex; gap: 12px; align-items: center; }
+        .action-icon-header { background: rgba(255,255,255,0.15); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; cursor: pointer; position: relative; transition: 0.2s; }
+        .action-icon-header:hover { background: #e8be52; color: #46211A; }
+        .badge-header { position: absolute; top: -5px; right: -5px; background: #e8be52; color: #46211A; font-size: 10px; border-radius: 50%; padding: 2px 6px; min-width: 18px; }
+        @media (max-width: 768px) { .profile-container { margin: 0 20px; } }
+    </style>
+</head>
+<body>
+
+<script>
+    let currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+    if (!currentUser) {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) { currentUser = JSON.parse(savedUser); sessionStorage.setItem('currentUser', JSON.stringify(currentUser)); }
+    }
+    if (!currentUser) window.location.href = 'login.html';
+</script>
+
+<!-- ШАПКА -->
+<div class="header-top-white">
+    <div class="container">
+        <div class="header-top-row">
+            <div class="logo-col"><a href="cabinet.html" class="logo-link"><img src="logo.png" class="logo-img"><span class="logo-text-gradient">Формула здоровья</span></a></div>
+            <div class="auth-col"></div>
+        </div>
+    </div>
+</div>
+
+<div class="header-bottom-green">
+    <div class="container">
+        <div class="header-bottom-row">
+            <nav class="nav-menu">
+                <a href="cabinet.html?tab=catalog" class="nav-link-green">Каталог</a>
+                <a href="payment-delivery.html" class="nav-link-green">Оплата и доставка</a>
+                <a href="presentations.html" class="nav-link-green">Презентации</a>
+            </nav>
+            <div class="action-icons-header">
+                <a href="cabinet.html?tab=favorites" class="action-icon-header"><i class="far fa-heart"></i><span class="badge-header" id="favoritesCountHeader">0</span></a>
+                <a href="cabinet.html?tab=cart" class="action-icon-header"><i class="fas fa-shopping-cart"></i><span class="badge-header" id="cartCountHeader">0</span></a>
+                <div class="profile-btn-wrapper">
+                    <button class="profile-trigger" id="profileTrigger"><i class="far fa-user"></i></button>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <a href="profile.html" class="dropdown-item-custom"><i class="fas fa-user-circle"></i> Мой профиль</a>
+                        <a href="change-password.html" class="dropdown-item-custom"><i class="fas fa-key"></i> Сменить пароль</a>
+                        <a href="login.html" class="dropdown-item-custom" id="logoutLink"><i class="fas fa-sign-out-alt"></i> Выйти</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="header-spacer"></div>
+
+<main class="profile-page">
+    <div class="container">
+        <div class="profile-container">
+            <a href="cabinet.html" class="back-link"><i class="fas fa-arrow-left"></i> Назад в кабинет</a>
+            <h1 style="margin-bottom: 30px;">Мой профиль</h1>
+            
+            <div class="profile-avatar-container">
+                <img id="avatarImg" src="images/default-avatar.png" alt="Аватар" class="profile-avatar-img" onerror="this.src='https://via.placeholder.com/120'">
+                <div class="profile-avatar-upload">
+                    <i class="fas fa-camera"></i>
+                    <input type="file" id="avatarUpload" accept="image/*">
+                </div>
+            </div>
+            
+            <div class="profile-field"><label>ФИО</label><input type="text" id="profileFio" placeholder="Иванов Иван Иванович"></div>
+            <div class="profile-field"><label>Дата рождения</label><input type="date" id="profileBirthdate"></div>
+            <div class="profile-field"><label>Электронная почта</label><input type="email" id="profileEmail" readonly disabled style="background: #f5f0ed;"></div>
+            <div class="profile-field"><label>Телефон</label><input type="tel" id="profilePhone" placeholder="+7 (___)-___-__-__"></div>
+            <div class="profile-field"><label>Страна</label><input type="text" id="profileCountry" placeholder="Россия"></div>
+            <div class="profile-field"><label>Город</label><input type="text" id="profileCity" placeholder="Москва"></div>
+            <div class="profile-field"><label>Полный адрес</label><textarea id="profileAddress" rows="3" placeholder="Улица, дом, квартира"></textarea></div>
+            <div class="profile-field"><label>Дата регистрации</label><input type="text" id="profileRegDate" readonly disabled style="background: #f5f0ed;"></div>
+            <button class="save-profile-btn" id="saveProfileBtn">Сохранить изменения</button>
+        </div>
+    </div>
+</main>
+
+<!-- ПОДВАЛ -->
+<footer class="footer-new">
+    <div class="footer-bg"></div>
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-brand"><div class="footer-logo-wrapper"><img src="logo.png" class="footer-logo-img-new"><span class="footer-brand-name">Формула здоровья</span></div>
+            <div class="footer-social"><a href="https://t.me/formula_health07" class="footer-social-icon"><i class="fab fa-telegram"></i></a>
+            <a href="https://chat.whatsapp.com/JUMvATnb4BB221ohTk8vKt" class="footer-social-icon"><i class="fab fa-whatsapp"></i></a>
+            <a href="https://www.instagram.com/formula_health" class="footer-social-icon"><i class="fab fa-instagram"></i></a>
+            <a href="https://rutube.ru/video/741d2f5cacf5f7442516a02d371053a7/" class="footer-social-icon"><i class="fas fa-play-circle"></i></a></div></div>
+            <div class="footer-column"><h4 class="footer-title">Каталог</h4><ul><li><a href="cabinet.html?tab=catalog">Все продукты</a></li><li><a href="cabinet.html?tab=favorites">Избранное</a></li><li><a href="cabinet.html?tab=cart">Корзина</a></li></ul></div>
+            <div class="footer-column"><h4 class="footer-title">Информация</h4><ul><li><a href="payment-delivery.html">Оплата и доставка</a></li><li><a href="presentations.html">Презентации</a></li><li><a href="privacy.html">Политика конфиденциальности</a></li><li><a href="map.html">Данные</a></li></ul></div>
+            <div class="footer-column"><h4 class="footer-title">Личный кабинет</h4><ul><li><a href="profile.html">Профиль</a></li><li><a href="change-password.html">Сменить пароль</a></li></ul></div>
+        </div>
+        <div class="footer-bottom"><div class="footer-copyright"><p>© 2026 | Все права защищены</p></div></div>
+    </div>
+</footer>
+
+<script>
+    let userProfile = JSON.parse(localStorage.getItem(`profile_${currentUser?.email}`) || '{}');
+    if (!userProfile.regDate) {
+        userProfile = { fio: currentUser?.name || '', email: currentUser?.email || '', phone: '', country: 'Россия', city: '', address: '', birthdate: '', regDate: new Date().toLocaleDateString('ru-RU'), avatar: 'images/default-avatar.png' };
+        localStorage.setItem(`profile_${currentUser?.email}`, JSON.stringify(userProfile));
+    }
+    
+    document.getElementById('profileFio').value = userProfile.fio || '';
+    document.getElementById('profileBirthdate').value = userProfile.birthdate || '';
+    document.getElementById('profileEmail').value = userProfile.email || currentUser?.email || '';
+    document.getElementById('profilePhone').value = userProfile.phone || '';
+    document.getElementById('profileCountry').value = userProfile.country || 'Россия';
+    document.getElementById('profileCity').value = userProfile.city || '';
+    document.getElementById('profileAddress').value = userProfile.address || '';
+    document.getElementById('profileRegDate').value = userProfile.regDate || '';
+    document.getElementById('avatarImg').src = userProfile.avatar || 'images/default-avatar.png';
+    
+    document.getElementById('saveProfileBtn')?.addEventListener('click', () => {
+        userProfile.fio = document.getElementById('profileFio').value;
+        userProfile.birthdate = document.getElementById('profileBirthdate').value;
+        userProfile.phone = document.getElementById('profilePhone').value;
+        userProfile.country = document.getElementById('profileCountry').value;
+        userProfile.city = document.getElementById('profileCity').value;
+        userProfile.address = document.getElementById('profileAddress').value;
+        localStorage.setItem(`profile_${currentUser?.email}`, JSON.stringify(userProfile));
+        alert('Профиль сохранён');
+    });
+    
+    document.getElementById('avatarUpload')?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                userProfile.avatar = event.target.result;
+                localStorage.setItem(`profile_${currentUser?.email}`, JSON.stringify(userProfile));
+                document.getElementById('avatarImg').src = event.target.result;
+                alert('Аватарка обновлена');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Выпадающее меню профиля
+    const profileTrigger = document.getElementById('profileTrigger');
+    const profileDropdown = document.getElementById('profileDropdown');
+    profileTrigger?.addEventListener('click', (e) => { e.stopPropagation(); profileDropdown.classList.toggle('open'); });
+    document.addEventListener('click', (e) => { if (!profileTrigger?.contains(e.target) && !profileDropdown?.contains(e.target)) profileDropdown?.classList.remove('open'); });
+    
+    // Выход
+    document.getElementById('logoutLink')?.addEventListener('click', (e) => { e.preventDefault(); sessionStorage.removeItem('currentUser'); localStorage.removeItem('currentUser'); window.location.href = 'login.html'; });
+    
+    // Счётчики
+    let cart = JSON.parse(localStorage.getItem(`cart_${currentUser?.email}`) || '[]');
+    let favorites = JSON.parse(localStorage.getItem(`fav_${currentUser?.email}`) || '[]');
+    document.getElementById('cartCountHeader').innerText = cart.length;
+    document.getElementById('favoritesCountHeader').innerText = favorites.length;
+</script>
+</body>
+</html>
